@@ -36,8 +36,8 @@ def load_models():
 
 # Cache the models for performance
 @st.cache_resource
- def get_models():
-    return load_models()
+def get_models():
+  return load_models()
 
 urdu_model, english_model = get_models()
 
