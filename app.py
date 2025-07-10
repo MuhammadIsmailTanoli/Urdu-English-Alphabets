@@ -13,31 +13,36 @@ import numpy as np
 import cv2
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import InputLayer
+from tensorflow.keras.layers import InputLayer, Conv2D
 
-# Monkey-patch InputLayer.from_config to support 'batch_shape' in saved models
+# Monkey-patch InputLayer.from_config to support 'batch_shape'
 @classmethod
 def _inputlayer_from_config(cls, config, custom_objects=None):
     if 'batch_shape' in config:
-        # Keras expects 'batch_input_shape' instead of 'batch_shape'
         config['batch_input_shape'] = config.pop('batch_shape')
     return cls(**config)
-
 InputLayer.from_config = _inputlayer_from_config
+
+# Monkey-patch Conv2D.from_config to handle 'dtype' dict
+@classmethod
+def _conv2d_from_config(cls, config, custom_objects=None):
+    if 'dtype' in config and isinstance(config['dtype'], dict):
+        # Extract the actual dtype string from the policy config
+        config['dtype'] = config['dtype'].get('config', {}).get('name', None)
+    return cls(**config)
+Conv2D.from_config = _conv2d_from_config
 
 # Load models once and cache
 def load_models():
-    # Clear any previous models to avoid name_scope issues
     tf.keras.backend.clear_session()
     urdu_model = load_model('Models/urdu_model.keras')
     tf.keras.backend.clear_session()
     english_model = load_model('Models/english_model.keras')
     return urdu_model, english_model
 
-# Cache the models for performance
 @st.cache_resource
 def get_models():
-  return load_models()
+    return load_models()
 
 urdu_model, english_model = get_models()
 
