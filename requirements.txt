@@ -1,6 +1,6 @@
 streamlit
 streamlit-drawable-canvas
 opencv-python
-tensorflow
 numpy
 python-3.10
+tensorflow-cpu==2.15.0
