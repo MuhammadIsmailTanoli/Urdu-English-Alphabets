@@ -13,7 +13,7 @@ import numpy as np
 import cv2
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import InputLayer, Conv2D
+from tensorflow.keras.layers import InputLayer, Conv2D, BatchNormalization
 
 # Monkey-patch InputLayer.from_config to support 'batch_shape'
 @classmethod
@@ -27,10 +27,17 @@ InputLayer.from_config = _inputlayer_from_config
 @classmethod
 def _conv2d_from_config(cls, config, custom_objects=None):
     if 'dtype' in config and isinstance(config['dtype'], dict):
-        # Extract the actual dtype string from the policy config
         config['dtype'] = config['dtype'].get('config', {}).get('name', None)
     return cls(**config)
 Conv2D.from_config = _conv2d_from_config
+
+# Monkey-patch BatchNormalization.from_config to handle 'dtype' dict
+@classmethod
+def _bn_from_config(cls, config, custom_objects=None):
+    if 'dtype' in config and isinstance(config['dtype'], dict):
+        config['dtype'] = config['dtype'].get('config', {}).get('name', None)
+    return cls(**config)
+BatchNormalization.from_config = _bn_from_config
 
 # Load models once and cache
 def load_models():
@@ -60,12 +67,8 @@ target_input = st.sidebar.text_input("Target (Letter for English, Index for Urdu
 stroke_width = st.sidebar.slider("Stroke Width:", 5, 30, 15)
 
 # Set canvas colors
-if language == "English":
-    bg_color = "#000000"
-    stroke_color = "#FFFFFF"
-else:
-    bg_color = "#000000"
-    stroke_color = "#FFFFFF"
+bg_color = "#000000"
+stroke_color = "#FFFFFF"
 
 # Draw canvas (increased size)
 canvas_result = st_canvas(
